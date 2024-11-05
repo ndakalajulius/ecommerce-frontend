@@ -1,19 +1,36 @@
-import React, { useContext, useState } from 'react';
-import { CartContext } from '../context/CartContext';
+import React, { useEffect, useState } from 'react';
+import API from '../api';  // Axios instance configured to point to your backend
 import { useNavigate } from 'react-router-dom';
 
 function Cart() {
-  const { cartItems, updateQuantity, removeFromCart } = useContext(CartContext);
-  const [error, setError] = useState('');
+  const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const handleCheckout = () => {
-    if (cartItems.length === 0) {
-      setError('Your cart is empty.');
-    } else {
-      navigate('/checkout');
-    }
+  useEffect(() => {
+    const fetchCartItems = async () => {
+      const response = await API.get('/api/cart'); // Adjust API endpoint as needed
+      setCartItems(response.data);
+      setLoading(false);
+    };
+    fetchCartItems();
+  }, []);
+
+  const updateQuantity = async (itemId, quantity) => {
+    const response = await API.put(`/api/cart/${itemId}`, { quantity });
+    setCartItems(response.data); // Update cart items after modifying quantity
   };
+
+  const removeItem = async (itemId) => {
+    await API.delete(`/api/cart/${itemId}`);
+    setCartItems(cartItems.filter(item => item.id !== itemId)); // Remove item from local state
+  };
+
+  const handleCheckout = () => {
+    navigate('/checkout'); // Redirect to Checkout page
+  };
+
+  if (loading) return <p>Loading...</p>;
 
   return (
     <div>
@@ -21,25 +38,25 @@ function Cart() {
       {cartItems.length === 0 ? (
         <p>Your cart is empty.</p>
       ) : (
-        <div>
-          {cartItems.map((item) => (
-            <div key={item.id}>
-              <p>{item.name}</p>
+        <ul>
+          {cartItems.map(item => (
+            <li key={item.id}>
+              <h4>{item.name}</h4>
               <p>Price: ${item.price}</p>
               <input
                 type="number"
+                min="1"
                 value={item.quantity}
                 onChange={(e) => updateQuantity(item.id, e.target.value)}
-                min="1"
               />
-              <button onClick={() => removeFromCart(item.id)}>Remove</button>
-            </div>
+              <button onClick={() => removeItem(item.id)}>Remove</button>
+            </li>
           ))}
-          <h3>Total: ${cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)}</h3>
-          <button onClick={handleCheckout}>Proceed to Checkout</button>
-        </div>
+        </ul>
       )}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {cartItems.length > 0 && (
+        <button onClick={handleCheckout}>Proceed to Checkout</button>
+      )}
     </div>
   );
 }
