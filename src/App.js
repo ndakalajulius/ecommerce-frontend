@@ -6,7 +6,8 @@ import Profile from './pages/Profile';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import OrderConfirmation from './pages/OrderConfirmation';
-import PrivateRoute from './components/PrivateRoute';
+import PrivateRoute from './components/';
+
 
 function App() {
   return (
